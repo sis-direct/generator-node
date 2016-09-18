@@ -51,10 +51,23 @@ module.exports = generators.Base.extend({
       desc: 'Include or not a gulpfile.js'
     });
 
+    this.option('license', {
+      type: Boolean,
+      required: false,
+      defaults: true,
+      desc: 'Include a license'
+    });
+
     this.option('name', {
       type: String,
       required: false,
       desc: 'Project name'
+    });
+
+    this.option('githubAccount', {
+      type: String,
+      required: false,
+      desc: 'GitHub username or organization'
     });
 
     this.option('projectRoot', {
@@ -102,9 +115,7 @@ module.exports = generators.Base.extend({
         return;
       }
 
-      var done = this.async();
-
-      askName({
+      return askName({
         name: 'name',
         message: 'Module Name',
         default: path.basename(process.cwd()),
@@ -112,15 +123,12 @@ module.exports = generators.Base.extend({
         validate: function (str) {
           return str.length > 0;
         }
-      }, this, function (name) {
-        this.props.name = name;
-        done();
+      }, this).then(function (answer) {
+        this.props.name = answer.name;
       }.bind(this));
     },
 
     askFor: function () {
-      var done = this.async();
-
       var prompts = [{
         name: 'description',
         message: 'Description',
@@ -165,13 +173,16 @@ module.exports = generators.Base.extend({
         when: this.options.coveralls === undefined
       }];
 
-      this.prompt(prompts, function (props) {
+      return this.prompt(prompts).then(function (props) {
         this.props = extend(this.props, props);
-        done();
       }.bind(this));
     },
 
     askForGithubAccount: function () {
+      if (this.options.githubAccount) {
+        this.props.githubAccount = this.options.githubAccount;
+        return;
+      }
       var done = this.async();
 
       githubUsername(this.props.authorEmail, function (err, username) {
@@ -182,7 +193,7 @@ module.exports = generators.Base.extend({
           name: 'githubAccount',
           message: 'GitHub username or organization',
           default: username
-        }, function (prompt) {
+        }).then(function (prompt) {
           this.props.githubAccount = prompt.githubAccount;
           done();
         }.bind(this));
@@ -210,7 +221,7 @@ module.exports = generators.Base.extend({
       main: this.props.babel ? 'dist/index.js' : path.join(
         this.options.projectRoot,
         'index.js'
-      ),
+      ).replace(/\\/g, '/'),
       keywords: []
     }, currentPkg);
 
@@ -285,7 +296,7 @@ module.exports = generators.Base.extend({
       });
     }
 
-    if (!this.pkg.license) {
+    if (this.options.license && !this.pkg.license) {
       this.composeWith('license', {
         options: {
           name: this.props.authorName,

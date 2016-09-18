@@ -1,12 +1,12 @@
 'use strict';
 var path = require('path');
 var assert = require('yeoman-assert');
-var helpers = require('yeoman-generator').test;
+var helpers = require('yeoman-test');
 
 describe('node:eslint', function () {
-  before(function (done) {
-    helpers.run(path.join(__dirname, '../generators/eslint'))
-      .on('end', done);
+  before(function () {
+    return helpers.run(path.join(__dirname, '../generators/eslint'))
+      .toPromise();
   });
 
   it('fill package.json', function () {
@@ -22,28 +22,23 @@ describe('node:eslint', function () {
   });
 
   describe('--es2015', function () {
-    before(function (done) {
-      helpers.run(path.join(__dirname, '../generators/eslint'))
+    before(function () {
+      return helpers.run(path.join(__dirname, '../generators/eslint'))
         .withOptions({es2015: true})
-        .on('end', done);
+        .toPromise();
     });
 
     it('fill package.json for ES2015', function () {
       assert.fileContent('package.json', /"babel-eslint":/);
       assert.fileContent('package.json', /"eslint-plugin-babel":/);
-      assert.jsonFileContent('package.json', {
-        eslintConfig: {
-          extends: 'xo-space/esnext'
-        }
-      });
     });
   });
 
   describe('--generate-into', function () {
-    before(function (done) {
-      helpers.run(path.join(__dirname, '../generators/eslint'))
+    before(function () {
+      return helpers.run(path.join(__dirname, '../generators/eslint'))
         .withOptions({generateInto: 'other/'})
-        .on('end', done);
+        .toPromise();
     });
 
     it('fill env .eslintrc with generate-into option', function () {
